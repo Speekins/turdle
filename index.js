@@ -21,6 +21,10 @@ var gameOverBoxWin = document.querySelector('#game-over-section-win')
 var gameOverBoxLoss = document.querySelector('#game-over-section-loss')
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count')
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural')
+var correctGuess = document.querySelector('#correct-guess')
+var totalGameStats = document.querySelector('#stats-total-games')
+var percentCorrect = document.querySelector('#stats-percent-correct')
+var averageGuesses = document.querySelector('#stats-average-guesses')
 
 // Event Listeners
 window.addEventListener('load', () => {
@@ -79,7 +83,7 @@ function moveToNextInput(e) {
 
   if (key !== 8 && key !== 46) {
     var indexOfNext = parseInt(e.target.id.split('-')[2]) + 1
-    if (!inputs[indexOfNext]) {return}
+    if (!inputs[indexOfNext]) { return }
     inputs[indexOfNext].focus()
   }
 }
@@ -104,7 +108,7 @@ function submitGuess() {
     errorMessage.innerText = ''
     compareGuess()
     if (checkForWin() || currentRow === 6) {
-      setTimeout(declareWinner, 1000)
+      setTimeout(declareResult, 1000)
     } else {
       changeRow()
     }
@@ -177,16 +181,23 @@ function changeRow() {
   updateInputPermissions()
 }
 
-function declareWinner() {
-  recordGameStats()
+function declareResult() {
+  if (!!checkForWin()) {
+    recordGameStats('win')
+    viewGameOverMessage('win')
+  } else {
+    recordGameStats('loss')
+    viewGameOverMessage('loss')
+  }
+  updateStats()
   changeGameOverText()
-  viewGameOverMessage()
   setTimeout(startNewGame, 4000)
 }
 
-function recordGameStats() {
-  gamesPlayed.push({ solved: true, guesses: currentRow })
-  console.log(gamesPlayed)
+function recordGameStats(result) {
+  if (result === 'win') {
+    gamesPlayed.push({ solved: true, guesses: currentRow })
+  } else { gamesPlayed.push({ solved: false, guesses: currentRow }) }
 }
 
 function changeGameOverText() {
@@ -217,6 +228,19 @@ function clearKey() {
   for (var i = 0; i < keyLetters.length; i++) {
     keyLetters[i].classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key')
   }
+}
+
+function updateStats() {
+  let totalGames = gamesPlayed.length
+  let gamesWon = gamesPlayed.filter(game => !!game.solved).length
+  let totalGuesses = gamesPlayed.reduce((total, game) => {
+    return total + game.guesses
+  }, 0)
+  let percent = (gamesWon / totalGuesses) * 100
+  let numberOfGuesses = totalGuesses / gamesWon
+  totalGameStats.innerText = totalGames
+  percentCorrect.innerText = percent
+  averageGuesses.innerText = numberOfGuesses
 }
 
 // Change Page View Functions
@@ -253,10 +277,10 @@ function viewStats() {
   viewStatsButton.classList.add('active')
 }
 
-function viewGameOverMessage() {
-  if (currentRow === 6) {
-    console.log(currentRow);
+function viewGameOverMessage(result) {
+  if (result === "loss") {
     gameOverBoxLoss.classList.remove('collapsed')
+    correctGuess.innerText = `${winningWord.toUpperCase()}`
   } else {
     gameOverBoxWin.classList.remove('collapsed')
   }
